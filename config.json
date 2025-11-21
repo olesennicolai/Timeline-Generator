@@ -23,11 +23,17 @@
     "width": 16
   },
   "fonts": {
+    "date_bold": false,
+    "date_italic": false,
     "date_size": 12,
     "family": "Trebuchet MS",
+    "label_bold": false,
+    "label_italic": false,
     "label_size": 12,
-    "month_label_size": 8,
+    "month_label_bold": false,
+    "month_label_size": 12,
     "title_size": 12,
+    "year_label_bold": true,
     "year_label_size": 10
   },
   "visual": {
@@ -43,10 +49,10 @@
     "month_boundary_width": 5,
     "month_label_alpha": 0.7,
     "month_label_offset": 0.08,
+    "month_tick_height": 0.1,
     "timeline_line_width": 3,
     "vertical_spacing": 0.8,
     "year_box_linewidth": 1.5,
-    "year_box_padding": 0.3,
-    "month_tick_height": 0.1
+    "year_box_padding": 0.3
   }
 }

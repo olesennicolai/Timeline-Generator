@@ -39,7 +39,10 @@ def get_default_config():
                   "year_label": "#2C3E50", "year_box_fill": "#FFFFFF",
                   "year_box_outline": "#2C3E50", "marker_outline": "#FFFFFF"},
         "fonts": {"family": "sans-serif", "title_size": 16, "label_size": 10, "date_size": 8,
-                 "month_label_size": 8, "year_label_size": 10},
+                 "month_label_size": 8, "year_label_size": 10,
+                 "label_bold": False, "label_italic": False,
+                 "date_bold": False, "date_italic": False,
+                 "month_label_bold": False, "year_label_bold": True},
         "visual": {"timeline_line_width": 2, "marker_size": 10, "connector_line_width": 1,
                   "connector_line_alpha": 0.6, "vertical_spacing": 0.8,
                   "date_format_display": "%d.%m.%Y", "month_boundary_width": 0.5,
@@ -157,13 +160,14 @@ def create_timeline(df, config, output_path):
             # Check if this is a new year
             if last_year is None or current_date.year != last_year:
                 # Add year label on the timeline
+                year_weight = 'bold' if fonts.get('year_label_bold', True) else 'normal'
                 ax.text(month_start_num, 0, f' {current_date.year} ',
                        ha='left',
                        va='center',
                        fontsize=fonts['year_label_size'],
                        fontfamily=fonts['family'],
                        color=colors['year_label'],
-                       fontweight='bold',
+                       fontweight=year_weight,
                        bbox=dict(boxstyle=f'round,pad={visual["year_box_padding"]}',
                                 facecolor=colors['year_box_fill'],
                                 edgecolor=colors['year_box_outline'],
@@ -174,6 +178,7 @@ def create_timeline(df, config, output_path):
             # Add month name above the timeline (centered in the month)
             if month_center_num >= min_date_num - padding and month_center_num <= max_date_num + padding:
                 month_name = current_date.strftime('%b')  # Abbreviated month name
+                month_weight = 'bold' if fonts.get('month_label_bold', False) else 'normal'
                 ax.text(month_center_num, visual['month_label_offset'],
                        month_name,
                        ha='center',
@@ -181,6 +186,7 @@ def create_timeline(df, config, output_path):
                        fontsize=fonts['month_label_size'],
                        fontfamily=fonts['family'],
                        color=colors['month_label'],
+                       fontweight=month_weight,
                        alpha=visual['month_label_alpha'],
                        zorder=5)
 
@@ -222,25 +228,32 @@ def create_timeline(df, config, output_path):
                   linewidths=visual['marker_outline_width'])
 
         # Add label
+        label_weight = 'bold' if fonts.get('label_bold', False) else 'normal'
+        label_style = 'italic' if fonts.get('label_italic', False) else 'normal'
         ax.text(date_num, y_text, name,
                 ha='center',
                 va=va,
                 fontsize=fonts['label_size'],
                 fontfamily=fonts['family'],
                 color=colors['text'],
+                fontweight=label_weight,
+                style=label_style,
                 wrap=True,
                 zorder=4)
 
         # Add date below timeline marker
         date_str = date.strftime(visual['date_format_display'])
         date_y = -visual['event_date_offset'] if position == 'above' else visual['event_date_offset']
+        date_weight = 'bold' if fonts.get('date_bold', False) else 'normal'
+        date_style = 'italic' if fonts.get('date_italic', False) else 'normal'
         ax.text(date_num, date_y, date_str,
                 ha='center',
                 va='top' if position == 'above' else 'bottom',
                 fontsize=fonts['date_size'],
                 fontfamily=fonts['family'],
                 color=colors['date_text'],
-                style='italic',
+                fontweight=date_weight,
+                style=date_style,
                 zorder=4)
 
     # Configure axes

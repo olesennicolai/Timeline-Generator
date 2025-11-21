@@ -409,7 +409,18 @@
                         <h3>Fonts</h3>
                         <div class="config-field">
                             <label>Font Family</label>
-                            <input type="text" id="fonts.family" onchange="updateConfig()">
+                            <select id="fonts.family" onchange="updateConfig()">
+                                <option value="sans-serif">Sans Serif (Default)</option>
+                                <option value="Arial">Arial</option>
+                                <option value="Helvetica">Helvetica</option>
+                                <option value="Trebuchet MS">Trebuchet MS</option>
+                                <option value="Verdana">Verdana</option>
+                                <option value="Georgia">Georgia</option>
+                                <option value="Times New Roman">Times New Roman</option>
+                                <option value="Courier New">Courier New</option>
+                                <option value="Monaco">Monaco</option>
+                                <option value="Comic Sans MS">Comic Sans MS</option>
+                            </select>
                         </div>
                         <div class="config-field">
                             <label>Title Size</label>
@@ -420,8 +431,52 @@
                             <input type="number" id="fonts.label_size" onchange="updateConfig()">
                         </div>
                         <div class="config-field">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="fonts.label_bold" onchange="updateConfig()" style="width: auto;">
+                                Event Label Bold
+                            </label>
+                        </div>
+                        <div class="config-field">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="fonts.label_italic" onchange="updateConfig()" style="width: auto;">
+                                Event Label Italic
+                            </label>
+                        </div>
+                        <div class="config-field">
                             <label>Date Size</label>
                             <input type="number" id="fonts.date_size" onchange="updateConfig()">
+                        </div>
+                        <div class="config-field">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="fonts.date_bold" onchange="updateConfig()" style="width: auto;">
+                                Date Bold
+                            </label>
+                        </div>
+                        <div class="config-field">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="fonts.date_italic" onchange="updateConfig()" style="width: auto;">
+                                Date Italic
+                            </label>
+                        </div>
+                        <div class="config-field">
+                            <label>Month Label Size</label>
+                            <input type="number" id="fonts.month_label_size" onchange="updateConfig()">
+                        </div>
+                        <div class="config-field">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="fonts.month_label_bold" onchange="updateConfig()" style="width: auto;">
+                                Month Label Bold
+                            </label>
+                        </div>
+                        <div class="config-field">
+                            <label>Year Label Size</label>
+                            <input type="number" id="fonts.year_label_size" onchange="updateConfig()">
+                        </div>
+                        <div class="config-field">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="fonts.year_label_bold" onchange="updateConfig()" style="width: auto;">
+                                Year Label Bold
+                            </label>
                         </div>
                     </div>
 
@@ -526,7 +581,11 @@
                     const fieldId = `${section}.${key}`;
                     const field = document.getElementById(fieldId);
                     if (field) {
-                        field.value = value;
+                        if (field.type === 'checkbox') {
+                            field.checked = value;
+                        } else {
+                            field.value = value;
+                        }
                     }
                 }
             }
@@ -534,8 +593,8 @@
 
         // Update configuration
         async function updateConfig() {
-            // Gather all config values from inputs
-            const inputs = document.querySelectorAll('#config-tab input');
+            // Gather all config values from inputs and selects
+            const inputs = document.querySelectorAll('#config-tab input, #config-tab select');
 
             inputs.forEach(input => {
                 const [section, key] = input.id.split('.');
@@ -543,7 +602,9 @@
                     let value = input.value;
 
                     // Convert to appropriate type
-                    if (input.type === 'number') {
+                    if (input.type === 'checkbox') {
+                        value = input.checked;
+                    } else if (input.type === 'number') {
                         value = parseFloat(value);
                     }
 
