@@ -98,6 +98,132 @@ def load_timeline_data(csv_path):
     return df
 
 
+def check_overlap(bbox1, bbox2, padding=0.05):
+    """Check if two bounding boxes overlap with optional padding"""
+    return not (bbox1.x1 + padding < bbox2.x0 or
+                bbox1.x0 > bbox2.x1 + padding or
+                bbox1.y1 + padding < bbox2.y0 or
+                bbox1.y0 > bbox2.y1 + padding)
+
+
+def adjust_label_positions(ax, fig, label_data, visual, colors):
+    """
+    Adjust label positions to prevent overlaps using a middle-out stacking approach.
+    Labels can swap between above/below positions if needed.
+
+    Args:
+        ax: matplotlib axes object
+        fig: matplotlib figure object
+        label_data: list of dicts with keys: text_obj, date_num, original_y, position, name, color
+        visual: visual configuration dict
+        colors: colors configuration dict
+
+    Returns:
+        max_y_extent: maximum y-coordinate used (for adjusting axis limits)
+    """
+    if not label_data:
+        return visual['vertical_spacing'] + 0.8
+
+    # Render to get bounding boxes
+    fig.canvas.draw()
+
+    # Get bounding boxes in data coordinates
+    for item in label_data:
+        bbox_display = item['text_obj'].get_window_extent(renderer=fig.canvas.get_renderer())
+        item['bbox'] = bbox_display.transformed(ax.transData.inverted())
+        item['current_y'] = item['original_y']
+        item['final_position'] = item['position']  # Track if swapped
+
+    # Sort by date to find middle event
+    sorted_labels = sorted(label_data, key=lambda x: x['date_num'])
+    middle_idx = len(sorted_labels) // 2
+
+    # Mark middle event as positioned
+    sorted_labels[middle_idx]['positioned'] = True
+
+    # Stack spacing
+    stack_increment = 0.2
+    collision_padding = 0.05
+
+    # Process events outward from middle
+    max_y_extent = abs(visual['vertical_spacing']) + 0.8
+
+    def find_non_overlapping_position(label, positioned_labels, start_y, is_above):
+        """Find a y-position where label doesn't overlap with any positioned labels"""
+        current_y = start_y
+        max_attempts = 10
+
+        for attempt in range(max_attempts):
+            # Update label position temporarily
+            label['text_obj'].set_position((label['date_num'], current_y))
+            fig.canvas.draw()
+            bbox_display = label['text_obj'].get_window_extent(renderer=fig.canvas.get_renderer())
+            test_bbox = bbox_display.transformed(ax.transData.inverted())
+
+            # Check for overlaps
+            has_overlap = False
+            for other in positioned_labels:
+                if other is label:
+                    continue
+                if check_overlap(test_bbox, other['bbox'], collision_padding):
+                    has_overlap = True
+                    break
+
+            if not has_overlap:
+                # Found a good position
+                label['bbox'] = test_bbox
+                label['current_y'] = current_y
+                return current_y, is_above
+
+            # Try next stack level
+            if is_above:
+                current_y += stack_increment
+            else:
+                current_y -= stack_increment
+
+            # After 3 attempts on same side, try opposite side
+            if attempt == 3:
+                is_above = not is_above
+                if is_above:
+                    current_y = visual['vertical_spacing'] + visual['event_label_offset']
+                else:
+                    current_y = -visual['vertical_spacing'] - visual['event_label_offset']
+
+        # Fallback: use last attempted position
+        label['bbox'] = test_bbox
+        label['current_y'] = current_y
+        return current_y, is_above
+
+    # Process labels before middle (going backward)
+    positioned = [sorted_labels[middle_idx]]
+    for i in range(middle_idx - 1, -1, -1):
+        label = sorted_labels[i]
+        is_above = label['position'] == 'above'
+        start_y = label['original_y']
+
+        new_y, new_side = find_non_overlapping_position(label, positioned, start_y, is_above)
+        label['current_y'] = new_y
+        label['final_position'] = 'above' if new_side else 'below'
+        label['positioned'] = True
+        positioned.append(label)
+        max_y_extent = max(max_y_extent, abs(new_y) + 0.3)
+
+    # Process labels after middle (going forward)
+    for i in range(middle_idx + 1, len(sorted_labels)):
+        label = sorted_labels[i]
+        is_above = label['position'] == 'above'
+        start_y = label['original_y']
+
+        new_y, new_side = find_non_overlapping_position(label, positioned, start_y, is_above)
+        label['current_y'] = new_y
+        label['final_position'] = 'above' if new_side else 'below'
+        label['positioned'] = True
+        positioned.append(label)
+        max_y_extent = max(max_y_extent, abs(new_y) + 0.3)
+
+    return max_y_extent
+
+
 def create_timeline(df, config, output_path):
     """Create timeline visualization and save as PNG"""
 
@@ -193,7 +319,10 @@ def create_timeline(df, config, output_path):
         # Move to next month
         current_date = next_month
 
-    # Plot each event
+    # First pass: Create markers and store event data for labels
+    label_data = []
+    event_markers = []
+
     for idx, row in df.iterrows():
         date = row['parsed_date']
         date_num = mdates.date2num(date)
@@ -212,34 +341,46 @@ def create_timeline(df, config, output_path):
             va = 'top'
             y_text = y_pos - visual['event_label_offset']
 
-        # Draw connector line from timeline to marker
-        ax.plot([date_num, date_num], [0, y_pos],
-                color=color,
-                linewidth=visual['connector_line_width'],
-                alpha=visual['connector_line_alpha'],
-                zorder=2)
-
         # Draw marker using scatter
-        ax.scatter(date_num, y_pos,
-                  s=visual['marker_size']**2,
-                  color=color,
-                  zorder=3,
-                  edgecolors=colors['marker_outline'],
-                  linewidths=visual['marker_outline_width'])
+        marker = ax.scatter(date_num, y_pos,
+                           s=visual['marker_size']**2,
+                           color=color,
+                           zorder=3,
+                           edgecolors=colors['marker_outline'],
+                           linewidths=visual['marker_outline_width'])
 
-        # Add label
+        # Create label (but don't finalize position yet)
         label_weight = 'bold' if fonts.get('label_bold', False) else 'normal'
         label_style = 'italic' if fonts.get('label_italic', False) else 'normal'
-        ax.text(date_num, y_text, name,
-                ha='center',
-                va=va,
-                fontsize=fonts['label_size'],
-                fontfamily=fonts['family'],
-                color=colors['text'],
-                fontweight=label_weight,
-                style=label_style,
-                wrap=True,
-                zorder=4)
+        text_obj = ax.text(date_num, y_text, name,
+                          ha='center',
+                          va=va,
+                          fontsize=fonts['label_size'],
+                          fontfamily=fonts['family'],
+                          color=colors['text'],
+                          fontweight=label_weight,
+                          style=label_style,
+                          wrap=True,
+                          zorder=4)
+
+        # Store label data for collision detection
+        label_data.append({
+            'text_obj': text_obj,
+            'date_num': date_num,
+            'original_y': y_text,
+            'marker_y': y_pos,
+            'position': position,
+            'name': name,
+            'color': color,
+            'va': va
+        })
+
+        # Store marker data
+        event_markers.append({
+            'date_num': date_num,
+            'marker_y': y_pos,
+            'color': color
+        })
 
         # Add date below timeline marker (if enabled)
         if visual.get('show_dates', True):
@@ -257,10 +398,35 @@ def create_timeline(df, config, output_path):
                     style=date_style,
                     zorder=4)
 
-    # Configure axes
+    # Adjust label positions to prevent overlaps
+    max_y_extent = adjust_label_positions(ax, fig, label_data, visual, colors)
+
+    # Second pass: Draw connector lines with adjusted positions
+    for label_info in label_data:
+        date_num = label_info['date_num']
+        marker_y = label_info['marker_y']
+        label_y = label_info['current_y']
+        color = label_info['color']
+
+        # Draw connector line from timeline to marker, then to label
+        ax.plot([date_num, date_num], [0, marker_y],
+                color=color,
+                linewidth=visual['connector_line_width'],
+                alpha=visual['connector_line_alpha'],
+                zorder=2)
+
+        # If label moved significantly from marker, draw additional connector
+        if abs(label_y - marker_y - visual['event_label_offset']) > 0.05:
+            ax.plot([date_num, date_num], [marker_y, label_y],
+                    color=color,
+                    linewidth=visual['connector_line_width'] * 0.5,
+                    alpha=visual['connector_line_alpha'] * 0.5,
+                    linestyle=':',
+                    zorder=2)
+
+    # Configure axes with dynamic y-limits based on label stacking
     ax.set_xlim(min_date_num - padding, max_date_num + padding)
-    ax.set_ylim(-visual['vertical_spacing'] - 0.8,
-                visual['vertical_spacing'] + 0.8)
+    ax.set_ylim(-max_y_extent, max_y_extent)
 
     # Hide all axes (month/year labels are on the timeline itself)
     ax.xaxis.set_visible(False)
