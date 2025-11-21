@@ -37,7 +37,8 @@ def get_default_config():
                   "text": "#2C3E50", "date_text": "#7F8C8D",
                   "month_boundary": "#2C3E50", "month_label": "#2C3E50",
                   "year_label": "#2C3E50", "year_box_fill": "#FFFFFF",
-                  "year_box_outline": "#2C3E50", "marker_outline": "#FFFFFF"},
+                  "year_box_outline": "#2C3E50", "marker_outline": "#FFFFFF",
+                  "event_box_fill": "#FFFFFF", "event_box_outline": "#3498DB"},
         "fonts": {"family": "sans-serif", "title_size": 16, "label_size": 10, "date_size": 8,
                  "month_label_size": 8, "year_label_size": 10,
                  "label_bold": False, "label_italic": False,
@@ -48,7 +49,9 @@ def get_default_config():
                   "date_format_display": "%d.%m.%Y", "month_boundary_width": 0.5,
                   "month_boundary_alpha": 0.3, "month_boundary_style": "--",
                   "month_label_offset": 0.08, "month_label_alpha": 0.7,
-                  "month_tick_height": 0.1, "show_dates": True, "year_box_padding": 0.3, "year_box_linewidth": 1.5,
+                  "month_tick_height": 0.1, "show_dates": True, "show_event_boxes": True,
+                  "show_markers": True, "event_box_padding": 0.4, "event_box_linewidth": 1.5,
+                  "year_box_padding": 0.3, "year_box_linewidth": 1.5,
                   "marker_outline_width": 1, "event_label_offset": 0.1,
                   "event_date_offset": 0.15}
     }
@@ -349,9 +352,24 @@ def create_timeline(df, config, output_path):
                            edgecolors=colors['marker_outline'],
                            linewidths=visual['marker_outline_width'])
 
+        # Hide marker if disabled
+        if not visual.get('show_markers', True):
+            marker.set_alpha(0)
+
         # Create label (but don't finalize position yet)
         label_weight = 'bold' if fonts.get('label_bold', False) else 'normal'
         label_style = 'italic' if fonts.get('label_italic', False) else 'normal'
+
+        # Prepare bbox (rounded box) for event labels if enabled
+        bbox_props = None
+        if visual.get('show_event_boxes', True):
+            bbox_props = dict(
+                boxstyle=f'round,pad={visual.get("event_box_padding", 0.4)}',
+                facecolor=colors.get('event_box_fill', '#FFFFFF'),
+                edgecolor=colors.get('event_box_outline', color),
+                linewidth=visual.get('event_box_linewidth', 1.5)
+            )
+
         text_obj = ax.text(date_num, y_text, name,
                           ha='center',
                           va=va,
@@ -360,6 +378,7 @@ def create_timeline(df, config, output_path):
                           color=colors['text'],
                           fontweight=label_weight,
                           style=label_style,
+                          bbox=bbox_props,
                           wrap=True,
                           zorder=4)
 
