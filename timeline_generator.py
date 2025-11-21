@@ -11,6 +11,8 @@ from dateutil.relativedelta import relativedelta
 from pathlib import Path
 
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for web/server usage
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
@@ -43,7 +45,7 @@ def get_default_config():
                   "date_format_display": "%d.%m.%Y", "month_boundary_width": 0.5,
                   "month_boundary_alpha": 0.3, "month_boundary_style": "--",
                   "month_label_offset": 0.08, "month_label_alpha": 0.7,
-                  "year_box_padding": 0.3, "year_box_linewidth": 1.5,
+                  "month_tick_height": 0.1, "year_box_padding": 0.3, "year_box_linewidth": 1.5,
                   "marker_outline_width": 1, "event_label_offset": 0.1,
                   "event_date_offset": 0.15}
     }
@@ -139,13 +141,14 @@ def create_timeline(df, config, output_path):
 
         # Check if we're within the visible range
         if month_start_num >= min_date_num - padding and month_start_num <= max_date_num + padding:
-            # Draw vertical line at month boundary
+            # Draw tick mark at month boundary (small vertical line on timeline)
+            tick_height = visual.get('month_tick_height', 0.1)  # Height of tick mark above and below timeline
             ax.plot([month_start_num, month_start_num],
-                   [-visual['vertical_spacing'] - 0.8, visual['vertical_spacing'] + 0.8],
+                   [-tick_height, tick_height],
                    color=colors['month_boundary'],
                    linewidth=visual['month_boundary_width'],
                    alpha=visual['month_boundary_alpha'],
-                   linestyle=visual['month_boundary_style'],
+                   linestyle='-',  # Solid line for tick marks
                    zorder=0)
 
             # Calculate center of the month for label placement
