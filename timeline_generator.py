@@ -341,7 +341,7 @@ def create_timeline(df, config, output_path):
             va = 'top'
             y_text = y_pos - visual['event_label_offset']
 
-        # Draw marker using scatter
+        # Draw marker using scatter (will be repositioned later)
         marker = ax.scatter(date_num, y_pos,
                            s=visual['marker_size']**2,
                            color=color,
@@ -372,14 +372,16 @@ def create_timeline(df, config, output_path):
             'position': position,
             'name': name,
             'color': color,
-            'va': va
+            'va': va,
+            'marker_obj': marker
         })
 
         # Store marker data
         event_markers.append({
             'date_num': date_num,
             'marker_y': y_pos,
-            'color': color
+            'color': color,
+            'marker_obj': marker
         })
 
         # Add date below timeline marker (if enabled)
@@ -401,28 +403,30 @@ def create_timeline(df, config, output_path):
     # Adjust label positions to prevent overlaps
     max_y_extent = adjust_label_positions(ax, fig, label_data, visual, colors)
 
-    # Second pass: Draw connector lines with adjusted positions
+    # Second pass: Update marker positions and draw connector lines with adjusted positions
     for label_info in label_data:
         date_num = label_info['date_num']
-        marker_y = label_info['marker_y']
         label_y = label_info['current_y']
         color = label_info['color']
+        marker_obj = label_info['marker_obj']
 
-        # Draw connector line from timeline to marker, then to label
+        # Calculate marker position (at the end of the connector line, just before label)
+        if label_y > 0:
+            # Label is above timeline
+            marker_y = label_y - visual['event_label_offset']
+        else:
+            # Label is below timeline
+            marker_y = label_y + visual['event_label_offset']
+
+        # Update marker position
+        marker_obj.set_offsets([[date_num, marker_y]])
+
+        # Draw single connector line from timeline to marker
         ax.plot([date_num, date_num], [0, marker_y],
                 color=color,
                 linewidth=visual['connector_line_width'],
                 alpha=visual['connector_line_alpha'],
                 zorder=2)
-
-        # If label moved significantly from marker, draw additional connector
-        if abs(label_y - marker_y - visual['event_label_offset']) > 0.05:
-            ax.plot([date_num, date_num], [marker_y, label_y],
-                    color=color,
-                    linewidth=visual['connector_line_width'] * 0.5,
-                    alpha=visual['connector_line_alpha'] * 0.5,
-                    linestyle=':',
-                    zorder=2)
 
     # Configure axes with dynamic y-limits based on label stacking
     ax.set_xlim(min_date_num - padding, max_date_num + padding)
