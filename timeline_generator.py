@@ -32,10 +32,20 @@ def get_default_config():
                       "margin_right": 1.0, "margin_top": 1.5, "margin_bottom": 1.5},
         "colors": {"background": "#FFFFFF", "timeline_line": "#2C3E50",
                   "above_items": "#3498DB", "below_items": "#E74C3C",
-                  "text": "#2C3E50", "date_text": "#7F8C8D"},
-        "fonts": {"family": "sans-serif", "title_size": 16, "label_size": 10, "date_size": 8},
+                  "text": "#2C3E50", "date_text": "#7F8C8D",
+                  "month_boundary": "#2C3E50", "month_label": "#2C3E50",
+                  "year_label": "#2C3E50", "year_box_fill": "#FFFFFF",
+                  "year_box_outline": "#2C3E50", "marker_outline": "#FFFFFF"},
+        "fonts": {"family": "sans-serif", "title_size": 16, "label_size": 10, "date_size": 8,
+                 "month_label_size": 8, "year_label_size": 10},
         "visual": {"timeline_line_width": 2, "marker_size": 10, "connector_line_width": 1,
-                  "vertical_spacing": 0.8, "date_format_display": "%d.%m.%Y"}
+                  "connector_line_alpha": 0.6, "vertical_spacing": 0.8,
+                  "date_format_display": "%d.%m.%Y", "month_boundary_width": 0.5,
+                  "month_boundary_alpha": 0.3, "month_boundary_style": "--",
+                  "month_label_offset": 0.08, "month_label_alpha": 0.7,
+                  "year_box_padding": 0.3, "year_box_linewidth": 1.5,
+                  "marker_outline_width": 1, "event_label_offset": 0.1,
+                  "event_date_offset": 0.15}
     }
 
 
@@ -94,8 +104,8 @@ def create_timeline(df, config, output_path):
 
     # Create figure
     fig, ax = plt.subplots(figsize=(dims['width'], dims['height']), dpi=dims['dpi'])
-    fig.patch.set_facecolor(colors['background'])
-    ax.set_facecolor(colors['background'])
+    fig.patch.set_facecolor('none')
+    ax.set_facecolor('none')
 
     # Set up the plot - convert dates to numeric format
     dates = df['parsed_date'].tolist()
@@ -124,14 +134,22 @@ def create_timeline(df, config, output_path):
 
     while current_date <= max_date:
         month_start_num = mdates.date2num(current_date)
+        next_month = current_date + relativedelta(months=1)
+        month_end_num = mdates.date2num(next_month)
 
         # Check if we're within the visible range
-        if month_start_num >= min_date_num and month_start_num <= max_date_num:
-            # Add small tick mark on timeline
-            ax.plot([month_start_num, month_start_num], [-0.05, 0.05],
-                   color=colors['timeline_line'],
-                   linewidth=visual['timeline_line_width'] * 0.5,
-                   zorder=1)
+        if month_start_num >= min_date_num - padding and month_start_num <= max_date_num + padding:
+            # Draw vertical line at month boundary
+            ax.plot([month_start_num, month_start_num],
+                   [-visual['vertical_spacing'] - 0.8, visual['vertical_spacing'] + 0.8],
+                   color=colors['month_boundary'],
+                   linewidth=visual['month_boundary_width'],
+                   alpha=visual['month_boundary_alpha'],
+                   linestyle=visual['month_boundary_style'],
+                   zorder=0)
+
+            # Calculate center of the month for label placement
+            month_center_num = (month_start_num + month_end_num) / 2
 
             # Check if this is a new year
             if last_year is None or current_date.year != last_year:
@@ -139,29 +157,32 @@ def create_timeline(df, config, output_path):
                 ax.text(month_start_num, 0, f' {current_date.year} ',
                        ha='left',
                        va='center',
-                       fontsize=fonts['label_size'],
+                       fontsize=fonts['year_label_size'],
                        fontfamily=fonts['family'],
-                       color=colors['timeline_line'],
+                       color=colors['year_label'],
                        fontweight='bold',
-                       bbox=dict(boxstyle='round,pad=0.3',
-                                facecolor=colors['background'],
-                                edgecolor=colors['timeline_line'],
-                                linewidth=1.5),
+                       bbox=dict(boxstyle=f'round,pad={visual["year_box_padding"]}',
+                                facecolor=colors['year_box_fill'],
+                                edgecolor=colors['year_box_outline'],
+                                linewidth=visual['year_box_linewidth']),
                        zorder=5)
                 last_year = current_date.year
-            else:
-                # Add month name on the timeline
+
+            # Add month name above the timeline (centered in the month)
+            if month_center_num >= min_date_num - padding and month_center_num <= max_date_num + padding:
                 month_name = current_date.strftime('%b')  # Abbreviated month name
-                ax.text(month_start_num, 0, month_name,
+                ax.text(month_center_num, visual['month_label_offset'],
+                       month_name,
                        ha='center',
-                       va='center',
-                       fontsize=fonts['date_size'],
+                       va='bottom',
+                       fontsize=fonts['month_label_size'],
                        fontfamily=fonts['family'],
-                       color=colors['timeline_line'],
+                       color=colors['month_label'],
+                       alpha=visual['month_label_alpha'],
                        zorder=5)
 
         # Move to next month
-        current_date = current_date + relativedelta(months=1)
+        current_date = next_month
 
     # Plot each event
     for idx, row in df.iterrows():
@@ -175,18 +196,18 @@ def create_timeline(df, config, output_path):
             y_pos = visual['vertical_spacing']
             color = colors['above_items']
             va = 'bottom'
-            y_text = y_pos + 0.1
+            y_text = y_pos + visual['event_label_offset']
         else:
             y_pos = -visual['vertical_spacing']
             color = colors['below_items']
             va = 'top'
-            y_text = y_pos - 0.1
+            y_text = y_pos - visual['event_label_offset']
 
         # Draw connector line from timeline to marker
         ax.plot([date_num, date_num], [0, y_pos],
                 color=color,
                 linewidth=visual['connector_line_width'],
-                alpha=0.6,
+                alpha=visual['connector_line_alpha'],
                 zorder=2)
 
         # Draw marker using scatter
@@ -194,8 +215,8 @@ def create_timeline(df, config, output_path):
                   s=visual['marker_size']**2,
                   color=color,
                   zorder=3,
-                  edgecolors='white',
-                  linewidths=1)
+                  edgecolors=colors['marker_outline'],
+                  linewidths=visual['marker_outline_width'])
 
         # Add label
         ax.text(date_num, y_text, name,
@@ -209,7 +230,7 @@ def create_timeline(df, config, output_path):
 
         # Add date below timeline marker
         date_str = date.strftime(visual['date_format_display'])
-        date_y = -0.15 if position == 'above' else 0.15
+        date_y = -visual['event_date_offset'] if position == 'above' else visual['event_date_offset']
         ax.text(date_num, date_y, date_str,
                 ha='center',
                 va='top' if position == 'above' else 'bottom',
@@ -242,7 +263,7 @@ def create_timeline(df, config, output_path):
     plt.savefig(output_path,
                 dpi=dims['dpi'],
                 bbox_inches='tight',
-                facecolor=colors['background'])
+                transparent=True)
     plt.close()
 
     print(f"Timeline successfully created: {output_path}")
