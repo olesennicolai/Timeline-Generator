@@ -7,6 +7,7 @@ Exports as PNG with customizable styling options
 import sys
 import json
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from pathlib import Path
 
 import pandas as pd
@@ -116,6 +117,52 @@ def create_timeline(df, config, output_path):
             linewidth=visual['timeline_line_width'],
             zorder=1)
 
+    # Add month names and year labels on the timeline
+    # Generate month boundaries from min_date to max_date
+    current_date = datetime(min_date.year, min_date.month, 1)
+    last_year = None
+
+    while current_date <= max_date:
+        month_start_num = mdates.date2num(current_date)
+
+        # Check if we're within the visible range
+        if month_start_num >= min_date_num and month_start_num <= max_date_num:
+            # Add small tick mark on timeline
+            ax.plot([month_start_num, month_start_num], [-0.05, 0.05],
+                   color=colors['timeline_line'],
+                   linewidth=visual['timeline_line_width'] * 0.5,
+                   zorder=1)
+
+            # Check if this is a new year
+            if last_year is None or current_date.year != last_year:
+                # Add year label on the timeline
+                ax.text(month_start_num, 0, f' {current_date.year} ',
+                       ha='left',
+                       va='center',
+                       fontsize=fonts['label_size'],
+                       fontfamily=fonts['family'],
+                       color=colors['timeline_line'],
+                       fontweight='bold',
+                       bbox=dict(boxstyle='round,pad=0.3',
+                                facecolor=colors['background'],
+                                edgecolor=colors['timeline_line'],
+                                linewidth=1.5),
+                       zorder=5)
+                last_year = current_date.year
+            else:
+                # Add month name on the timeline
+                month_name = current_date.strftime('%b')  # Abbreviated month name
+                ax.text(month_start_num, 0, month_name,
+                       ha='center',
+                       va='center',
+                       fontsize=fonts['date_size'],
+                       fontfamily=fonts['family'],
+                       color=colors['timeline_line'],
+                       zorder=5)
+
+        # Move to next month
+        current_date = current_date + relativedelta(months=1)
+
     # Plot each event
     for idx, row in df.iterrows():
         date = row['parsed_date']
@@ -177,12 +224,8 @@ def create_timeline(df, config, output_path):
     ax.set_ylim(-visual['vertical_spacing'] - 0.8,
                 visual['vertical_spacing'] + 0.8)
 
-    # Format x-axis to show dates
-    ax.xaxis.set_major_formatter(mdates.DateFormatter(visual['date_format_display']))
-    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
-    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
-
-    # Remove y-axis
+    # Hide all axes (month/year labels are on the timeline itself)
+    ax.xaxis.set_visible(False)
     ax.yaxis.set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
