@@ -12,7 +12,7 @@
     "background": "#FFFFFF",
     "timeline_line": "#2C3E50",
     "above_items": "#3498DB",
-    "below_items": "#E74C3C",
+    "below_items": "#3498DB",
     "text": "#2C3E50",
     "date_text": "#7F8C8D"
   },
@@ -23,9 +23,9 @@
     "date_size": 8
   },
   "visual": {
-    "timeline_line_width": 2,
-    "marker_size": 10,
-    "connector_line_width": 1,
+    "timeline_line_width": 3,
+    "marker_size": 20,
+    "connector_line_width": 3,
     "vertical_spacing": 0.8,
     "date_format_display": "%d.%m.%Y"
   }
