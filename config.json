@@ -1,0 +1,32 @@
+{
+  "dimensions": {
+    "width": 16,
+    "height": 10,
+    "dpi": 300,
+    "margin_left": 1.0,
+    "margin_right": 1.0,
+    "margin_top": 1.5,
+    "margin_bottom": 1.5
+  },
+  "colors": {
+    "background": "#FFFFFF",
+    "timeline_line": "#2C3E50",
+    "above_items": "#3498DB",
+    "below_items": "#E74C3C",
+    "text": "#2C3E50",
+    "date_text": "#7F8C8D"
+  },
+  "fonts": {
+    "family": "sans-serif",
+    "title_size": 16,
+    "label_size": 10,
+    "date_size": 8
+  },
+  "visual": {
+    "timeline_line_width": 2,
+    "marker_size": 10,
+    "connector_line_width": 1,
+    "vertical_spacing": 0.8,
+    "date_format_display": "%d.%m.%Y"
+  }
+}
