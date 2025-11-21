@@ -48,7 +48,7 @@ def get_default_config():
                   "date_format_display": "%d.%m.%Y", "month_boundary_width": 0.5,
                   "month_boundary_alpha": 0.3, "month_boundary_style": "--",
                   "month_label_offset": 0.08, "month_label_alpha": 0.7,
-                  "month_tick_height": 0.1, "year_box_padding": 0.3, "year_box_linewidth": 1.5,
+                  "month_tick_height": 0.1, "show_dates": True, "year_box_padding": 0.3, "year_box_linewidth": 1.5,
                   "marker_outline_width": 1, "event_label_offset": 0.1,
                   "event_date_offset": 0.15}
     }
@@ -241,20 +241,21 @@ def create_timeline(df, config, output_path):
                 wrap=True,
                 zorder=4)
 
-        # Add date below timeline marker
-        date_str = date.strftime(visual['date_format_display'])
-        date_y = -visual['event_date_offset'] if position == 'above' else visual['event_date_offset']
-        date_weight = 'bold' if fonts.get('date_bold', False) else 'normal'
-        date_style = 'italic' if fonts.get('date_italic', False) else 'normal'
-        ax.text(date_num, date_y, date_str,
-                ha='center',
-                va='top' if position == 'above' else 'bottom',
-                fontsize=fonts['date_size'],
-                fontfamily=fonts['family'],
-                color=colors['date_text'],
-                fontweight=date_weight,
-                style=date_style,
-                zorder=4)
+        # Add date below timeline marker (if enabled)
+        if visual.get('show_dates', True):
+            date_str = date.strftime(visual['date_format_display'])
+            date_y = -visual['event_date_offset'] if position == 'above' else visual['event_date_offset']
+            date_weight = 'bold' if fonts.get('date_bold', False) else 'normal'
+            date_style = 'italic' if fonts.get('date_italic', False) else 'normal'
+            ax.text(date_num, date_y, date_str,
+                    ha='center',
+                    va='top' if position == 'above' else 'bottom',
+                    fontsize=fonts['date_size'],
+                    fontfamily=fonts['family'],
+                    color=colors['date_text'],
+                    fontweight=date_weight,
+                    style=date_style,
+                    zorder=4)
 
     # Configure axes
     ax.set_xlim(min_date_num - padding, max_date_num + padding)

@@ -483,6 +483,12 @@
                     <div class="config-section">
                         <h3>Visual</h3>
                         <div class="config-field">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="visual.show_dates" onchange="updateConfig()" style="width: auto;">
+                                Show Dates on Timeline
+                            </label>
+                        </div>
+                        <div class="config-field">
                             <label>Timeline Line Width</label>
                             <input type="number" id="visual.timeline_line_width" step="0.1" onchange="updateConfig()">
                         </div>
