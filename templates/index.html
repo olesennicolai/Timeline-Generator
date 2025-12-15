@@ -149,6 +149,7 @@
             border: 1px solid #e1e8ed;
             border-radius: 8px;
             padding: 15px;
+            padding-top: 20px;
             position: relative;
         }
 
@@ -162,10 +163,35 @@
             margin-bottom: 8px;
         }
 
+        .event-item .color-pickers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .event-item .color-picker-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .event-item .color-picker-group label {
+            font-size: 11px;
+            color: #5f6368;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .event-item .color-picker-group input[type="color"] {
+            height: 35px;
+            padding: 2px;
+            cursor: pointer;
+        }
+
         .event-item .remove-btn {
             position: absolute;
             top: 10px;
-            right: 10px;
+            right: 40px;
             background: #e74c3c;
             color: white;
             border: none;
@@ -180,6 +206,29 @@
 
         .event-item .remove-btn:hover {
             background: #c0392b;
+        }
+
+        .event-item .reset-colors-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #95a5a6;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .event-item .reset-colors-btn:hover {
+            background: #7f8c8d;
         }
 
         .add-event-btn {
@@ -683,16 +732,34 @@
             }
         }
 
+        // Get default colors from config
+        function getDefaultBoxColor(position) {
+            return position === 'above' ? (config.colors?.above_items || '#3498DB') : (config.colors?.below_items || '#E74C3C');
+        }
+
+        function getDefaultMarkerColor(position) {
+            return position === 'above' ? (config.colors?.above_items || '#3498DB') : (config.colors?.below_items || '#E74C3C');
+        }
+
         // Render events list
         function renderEvents() {
             const container = document.getElementById('events-list');
             container.innerHTML = '';
 
             events.forEach((event, index) => {
+                // Set default colors if not present
+                if (!event.box_color) {
+                    event.box_color = getDefaultBoxColor(event.position || 'above');
+                }
+                if (!event.marker_color) {
+                    event.marker_color = getDefaultMarkerColor(event.position || 'above');
+                }
+
                 const eventDiv = document.createElement('div');
                 eventDiv.className = 'event-item';
                 eventDiv.innerHTML = `
-                    <button class="remove-btn" onclick="removeEvent(${index})">×</button>
+                    <button class="remove-btn" onclick="removeEvent(${index})" title="Remove Event">×</button>
+                    <button class="reset-colors-btn" onclick="resetEventColors(${index})" title="Reset Colors to Default">↻</button>
                     <input type="text" placeholder="Event Name" value="${event.name || ''}"
                            onchange="updateEvent(${index}, 'name', this.value)">
                     <input type="text" placeholder="Date (DD.MM.YYYY)" value="${event.date || ''}"
@@ -701,6 +768,18 @@
                         <option value="above" ${event.position === 'above' ? 'selected' : ''}>Above</option>
                         <option value="below" ${event.position === 'below' ? 'selected' : ''}>Below</option>
                     </select>
+                    <div class="color-pickers">
+                        <div class="color-picker-group">
+                            <label>Text Box Color</label>
+                            <input type="color" value="${event.box_color || '#3498DB'}"
+                                   onchange="updateEvent(${index}, 'box_color', this.value)">
+                        </div>
+                        <div class="color-picker-group">
+                            <label>Marker Color</label>
+                            <input type="color" value="${event.marker_color || '#3498DB'}"
+                                   onchange="updateEvent(${index}, 'marker_color', this.value)">
+                        </div>
+                    </div>
                 `;
                 container.appendChild(eventDiv);
             });
@@ -708,12 +787,24 @@
 
         // Add new event
         function addEvent() {
+            const defaultPosition = 'above';
             events.push({
                 name: '',
                 date: '',
-                position: 'above'
+                position: defaultPosition,
+                box_color: getDefaultBoxColor(defaultPosition),
+                marker_color: getDefaultMarkerColor(defaultPosition)
             });
             renderEvents();
+        }
+
+        // Reset event colors to defaults
+        async function resetEventColors(index) {
+            const event = events[index];
+            event.box_color = getDefaultBoxColor(event.position || 'above');
+            event.marker_color = getDefaultMarkerColor(event.position || 'above');
+            renderEvents();
+            await saveEvents();
         }
 
         // Update event

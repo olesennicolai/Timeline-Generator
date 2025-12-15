@@ -332,22 +332,27 @@ def create_timeline(df, config, output_path):
         name = row['name']
         position = row['position']
 
-        # Determine y-position and color
+        # Determine y-position and default color based on position
+        default_color = colors['above_items'] if position == 'above' else colors['below_items']
+
+        # Get individual colors from CSV if present, otherwise use defaults
+        marker_color = row.get('marker_color', default_color) if 'marker_color' in row and pd.notna(row.get('marker_color')) and str(row.get('marker_color')).strip() else default_color
+        box_color = row.get('box_color', default_color) if 'box_color' in row and pd.notna(row.get('box_color')) and str(row.get('box_color')).strip() else default_color
+
+        # Determine y-position
         if position == 'above':
             y_pos = visual['vertical_spacing']
-            color = colors['above_items']
             va = 'bottom'
             y_text = y_pos + visual['event_label_offset']
         else:
             y_pos = -visual['vertical_spacing']
-            color = colors['below_items']
             va = 'top'
             y_text = y_pos - visual['event_label_offset']
 
         # Draw marker using scatter (will be repositioned later)
         marker = ax.scatter(date_num, y_pos,
                            s=visual['marker_size']**2,
-                           color=color,
+                           color=marker_color,
                            zorder=3,
                            edgecolors=colors['marker_outline'],
                            linewidths=visual['marker_outline_width'])
@@ -366,7 +371,7 @@ def create_timeline(df, config, output_path):
             bbox_props = dict(
                 boxstyle=f'round,pad={visual.get("event_box_padding", 0.4)}',
                 facecolor=colors.get('event_box_fill', '#FFFFFF'),
-                edgecolor=colors.get('event_box_outline', color),
+                edgecolor=box_color,
                 linewidth=visual.get('event_box_linewidth', 1.5)
             )
 
@@ -390,7 +395,7 @@ def create_timeline(df, config, output_path):
             'marker_y': y_pos,
             'position': position,
             'name': name,
-            'color': color,
+            'color': marker_color,
             'va': va,
             'marker_obj': marker
         })
@@ -399,7 +404,7 @@ def create_timeline(df, config, output_path):
         event_markers.append({
             'date_num': date_num,
             'marker_y': y_pos,
-            'color': color,
+            'color': marker_color,
             'marker_obj': marker
         })
 

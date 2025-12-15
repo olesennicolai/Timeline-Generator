@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(ss:*)",
+      "Bash(timeout 5 python:*)",
+      "Bash(timeout 5 python3:*)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(python3:*)",
+      "Bash(pkill:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(git checkout:*)"
+    ]
+  }
+}
