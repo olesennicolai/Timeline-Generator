@@ -1,36 +1,79 @@
-# Timeline Generator
+# Timeline Generator Web UI
 
-A Python tool for creating beautiful horizontal timeline visualizations from CSV data, with customizable styling and PNG export.
+A beautiful, interactive web interface for creating and customizing timeline visualizations.
 
 ## Features
 
-- **Horizontal timeline layout** with events above and below the line
+- **Live Preview**: See your timeline update in real-time as you make changes
+- **Event Editor**: Add, edit, and remove events with a simple interface
+- **Configuration Panel**: Customize colors, fonts, dimensions, and visual properties
+- **Auto-Save**: All changes are automatically saved to files
+- **Multiple Export Formats**: Export as PNG, CSV, or JSON
+- **Default Timeline**: Boots up with example_timeline.csv by default
 - **European date format** support (DD.MM.YYYY)
 - **Smart positioning**: Manual control via CSV or automatic alternating
-- **Fully customizable styling** through JSON configuration
-- **High-quality PNG export** with configurable DPI
-- **Simple command-line interface**
 
 ## Installation
 
-1. Install Python dependencies:
-
+1. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Quick Start
+## Usage
 
-### Basic Usage
-
+1. Start the web application:
 ```bash
-python timeline_generator.py example_timeline.csv output.png
+python app.py
 ```
 
-### With Custom Configuration
+2. Open your browser to: http://localhost:5000
 
-```bash
-python timeline_generator.py my_events.csv my_timeline.png custom_config.json
+3. The interface will load with the example_timeline.csv by default
+
+## Interface Overview
+
+### Events Tab
+- View all timeline events in an editable list
+- Each event has:
+  - **Name**: Event title
+  - **Date**: Date in DD.MM.YYYY format
+  - **Position**: Above or below the timeline
+- Click **+ Add Event** to add new events
+- Click **×** on any event to remove it
+- Changes are saved automatically and update the preview
+
+### Configuration Tab
+Organized into sections:
+
+- **Dimensions**: Width, height, DPI, and margins
+- **Colors**: Customize all colors (timeline, events, text, etc.)
+- **Fonts**: Font family and sizes
+- **Visual**: Line widths, marker sizes, spacing, etc.
+
+All configuration changes are saved automatically to `config.json`
+
+### Preview Panel
+- Shows live preview of your timeline
+- Click **Update Preview** to regenerate
+- Export buttons:
+  - **Export PNG**: Download high-resolution timeline image
+  - **Export CSV**: Download event data
+  - **Export JSON**: Download complete configuration and data
+
+## File Structure
+
+```
+SwissGrants/
+├── app.py                    # Flask web application
+├── timeline_generator.py     # Core timeline generation logic
+├── config.json              # Timeline configuration
+├── example_timeline.csv     # Default timeline data
+├── templates/
+│   └── index.html          # Web UI
+├── static/
+│   └── preview.png         # Generated preview image
+└── requirements.txt        # Python dependencies
 ```
 
 ## CSV Format
@@ -125,43 +168,48 @@ python timeline_generator.py events.csv timeline_blue.png config_blue.json
 python timeline_generator.py events.csv timeline_dark.png config_dark.json
 ```
 
-## Examples
+## Command Line Usage
 
-### Generate Timeline from Example Data
+You can still use the original command-line interface:
+
+### Basic Usage
 
 ```bash
-python timeline_generator.py example_timeline.csv my_first_timeline.png
+python timeline_generator.py example_timeline.csv output.png
 ```
 
-### Using Automatic Alternating Positions
+### With Custom Configuration
 
-Create a CSV with just `name` and `date` columns - positions will alternate automatically:
-
-```csv
-name,date
-Event 1,01.01.2024
-Event 2,15.01.2024
-Event 3,01.02.2024
+```bash
+python timeline_generator.py my_events.csv my_timeline.png custom_config.json
 ```
 
-### Manual Position Control
+## Tips
 
-Specify exactly where each event should appear:
-
-```csv
-name,date,position
-Important Milestone,01.01.2024,above
-Background Task,01.01.2024,below
-Another Milestone,15.01.2024,above
-```
+- Changes to events or configuration automatically trigger a preview update after saving
+- Use DD.MM.YYYY format for dates (e.g., 15.03.2024)
+- Color inputs support hex colors for precise color selection
+- The application saves all changes to the actual config.json and CSV files
+- Preview updates may take a moment to generate for complex timelines
+- **High-resolution output**: Increase the `dpi` value in config.json for print-quality images
+- **Long event names**: They will automatically wrap, but consider abbreviating for cleaner visuals
+- **Many events**: Increase the `width` dimension for crowded timelines
 
 ## Troubleshooting
+
+### Preview not updating?
+- Ensure all events have valid names and dates in DD.MM.YYYY format
+- Check the browser console for errors
+
+### Can't see the preview?
+- Click "Update Preview" button
+- Make sure you have at least one valid event with a name and date
 
 ### Date Format Errors
 
 Make sure your dates are in DD.MM.YYYY format:
-- ✅ Correct: `15.03.2024`
-- ❌ Wrong: `03/15/2024`, `2024-03-15`, `15-03-2024`
+- Correct: `15.03.2024`
+- Wrong: `03/15/2024`, `2024-03-15`, `15-03-2024`
 
 ### Missing Columns Error
 
@@ -176,14 +224,8 @@ Colors must be in hex format (e.g., `#FF0000` for red) or standard color names (
 - **matplotlib** >= 3.7.0 - For plotting and rendering
 - **pandas** >= 2.0.0 - For CSV data handling
 - **Pillow** >= 10.0.0 - For PNG image processing
+- **Flask** - For web interface
 
 ## License
 
 MIT License - Feel free to use and modify as needed.
-
-## Tips
-
-1. **High-resolution output**: Increase the `dpi` value in config.json for print-quality images
-2. **Long event names**: They will automatically wrap, but consider abbreviating for cleaner visuals
-3. **Many events**: Increase the `width` dimension for crowded timelines
-4. **Date spacing**: The tool automatically adds padding around your date range for better visibility
