@@ -10,7 +10,20 @@
       "Bash(python3:*)",
       "Bash(pkill:*)",
       "Bash(.venv/Scripts/python.exe:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git -C /Users/nicolaiolesen/Documents/Projects/Timeline-Generator status)",
+      "Bash(git -C /Users/nicolaiolesen/Documents/Projects/Timeline-Generator log --oneline -5)",
+      "Bash(git -C /Users/nicolaiolesen/Documents/Projects/Timeline-Generator log --oneline origin/main -5)",
+      "Bash(git -C /Users/nicolaiolesen/Documents/Projects/Timeline-Generator diff app.py)",
+      "Bash(git -C /Users/nicolaiolesen/Documents/Projects/Timeline-Generator add app.py static/preview.png)",
+      "Bash(git -C:*)",
+      "Bash(ssh:*)",
+      "Bash(ssh-keygen:*)",
+      "Bash(ssh-add:*)",
+      "Bash(source:*)",
+      "Bash(python app.py:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

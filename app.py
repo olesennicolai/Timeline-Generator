@@ -229,6 +229,31 @@ def export_timeline(format):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/import/csv', methods=['POST'])
+def import_csv():
+    """Import a CSV file and return parsed event data"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({'success': False, 'error': 'File must be a CSV'}), 400
+
+        df = pd.read_csv(io.StringIO(file.stream.read().decode('utf-8')))
+
+        if 'name' not in df.columns or 'date' not in df.columns:
+            return jsonify({'success': False, 'error': 'CSV must have "name" and "date" columns'}), 400
+
+        data = df.to_dict('records')
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/files', methods=['GET'])
 def list_csv_files():
     """List available CSV files"""

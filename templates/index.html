@@ -383,6 +383,11 @@
             <div class="panel-content">
                 <!-- Events Tab -->
                 <div id="events-tab" class="tab-content active">
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                        <button class="btn btn-secondary" style="flex:1; font-size:13px;" onclick="document.getElementById('csv-upload-input').click()">Import CSV</button>
+                        <button class="btn btn-secondary" style="flex:1; font-size:13px;" onclick="exportTimeline('csv')">Export CSV</button>
+                        <input type="file" id="csv-upload-input" accept=".csv" style="display:none" onchange="importCSV(this)">
+                    </div>
                     <div class="events-list" id="events-list"></div>
                     <button class="add-event-btn" onclick="addEvent()">+ Add Event</button>
                     <div id="events-status"></div>
@@ -902,6 +907,38 @@
             } catch (error) {
                 alert('Export error: ' + error);
             }
+        }
+
+        // Import CSV file
+        async function importCSV(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/import/csv', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    events = data.data;
+                    renderEvents();
+                    await saveEvents();
+                    showStatus('events-status', `Imported ${events.length} events from ${file.name}`, 'success');
+                } else {
+                    showStatus('events-status', 'Import error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('events-status', 'Import error: ' + error, 'error');
+            }
+
+            // Reset so the same file can be re-imported if needed
+            input.value = '';
         }
 
         // Show status message
